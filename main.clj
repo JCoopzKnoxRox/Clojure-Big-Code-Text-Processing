@@ -232,9 +232,13 @@ This function may not be perfect! If you discover things that don't fit, add the
 (defn pct-with-word [word sentences]
    (float (/ (num-with-word word sentences) (count sentences)))
 )
- 
+
+(defn punctuation-pct [sentences]
+  (float (/ (count(filter punc (sentences))) (count sentences)))
+  )
 ;; test out on just sentences by Poe
 (println "percent of words in Poe that are 'the'" (pct-with-word "the" eaps))
- 
+
 ;; Now test out on the sentences of all of the authors
 (println "percent of words in each of the authors sentences that are 'the'" (map #(pct-with-word "the" %) (map2 towords authors)))
+
