@@ -167,8 +167,8 @@
 ;; to make a regular expression as a variable.
 (def punc #"(\.|;|\?|!|\.|&|\(|\)|,|'|\"|`)+")
 (defn ispunc
-    "True if a string is made up of only punctuation chars; false otherwise.
-This function may not be perfect! If you discover things that don't fit, add them here."
+;    "True if a string is made up of only punctuation chars; false otherwise.
+;This function may not be perfect! If you discover things that don't fit, add them here."
     [word]
     (not (nil? (re-matches #"(\.|;|\?|!|\.|&|\(|\)|,|'|\"|`)+" word)))
 )
@@ -185,10 +185,11 @@ This function may not be perfect! If you discover things that don't fit, add the
 )
 
 ;; Check if word is a stopword
+(defn capstopset (apply hash-set(map str/capiltalize stopset)))
 (defn isstop
-    "True if a string is a stopword, false otherwise. Constant time!"
-    [word]
-    (contains? stopset word)
+  "True if a string is a stopword, false otherwise. Constant time!"
+  [words]
+  (or (contains? stopset words) (contains? capstopset words))
 )
 
 ;; filter out all punctuation from one sentence
@@ -233,12 +234,46 @@ This function may not be perfect! If you discover things that don't fit, add the
    (float (/ (num-with-word word sentences) (count sentences)))
 )
 
-(defn punctuation-pct [sentences]
-  (float (/ (count(filter punc (sentences))) (count sentences)))
+(defn punctuation-pct [sentences] ;works with input from one file for example just eap
+  (float (/ (count (filter #(ispunc %) (flatten (map #(towords %) sentences)))) (count (flatten (map #(towords %) sentences)))))
   )
+
+(defn stopword-pct [sentences] ;works for one input file
+  (float (/ (count (filter isstop (flatten (map #(towords %) sentences)))) (count (flatten (map #(towords %) sentences)))))
+  )
+
+(defn words-pct [sentences]
+  (float (- 1 (float (/ (+ (count (filter #(ispunc %) (flatten  (map #(towords %) sentences)))) (count (filter isstop (flatten (map #(towords %) sentences)))))  (count (flatten (map #(towords %) sentences)))))))
+  )
+
+(defn common-words[sentences]
+  (keys (take 10 (reverse (sort-by last (frequencies (filter #(not (isstop %)) (filter #(not (ispunc %)) (flatten (map #(towords %) sentences)))))))))
+  )
+
+(defn common-words-n [sentences n]
+  (keys (take n (reverse (sort-by last (frequencies (filter #(not (isstop %)) (filter #(not (ispunc %)) (flatten (map #(towords %) sentences)))))))))
+  )
+
+(defn most-common-pairs [sentences]
+  (map first (take 10 (reverse (sort-by last (frequencies (partition 2 (filter isstop (filter #(not (ispunc %)) (flatten (map #(towords %) sentences))))))))))
+  )
+;; you have to use    (map most-common-pairs authors)    on most common pairs to get all of them in one but the works individually
+(defn k-most-common-ngrams [n k sentences]
+  (map first (take k (reverse (sort-by last (frequencies (partition n (filter isstop (filter #(not (ispunc %)) (flatten (map #(towords %) sentences))))))))))
+  )
+
+(defn punctuation-freq [sentences]
+  (reverse (sort-by last (frequencies (filter #(ispunc %) (flatten (map #(towords %) sentences))))))
+  )
+
+
+
+
+;;(println "percent of words in Poe that are 'the'" (punctuation-pct (map2 towords authors)))
 ;; test out on just sentences by Poe
 (println "percent of words in Poe that are 'the'" (pct-with-word "the" eaps))
 
 ;; Now test out on the sentences of all of the authors
 (println "percent of words in each of the authors sentences that are 'the'" (map #(pct-with-word "the" %) (map2 towords authors)))
+
 
